@@ -8,7 +8,7 @@ get_ha_version()
 
 get_python_version()
 {
-  opkg list | grep python3-base | head -n 1 | grep -Eo '[[:digit:]]+\.[[:digit:]]+'
+  python -V | grep -Eo '[[:digit:]]+\.[[:digit:]]+'
 }
 
 get_version()
@@ -74,7 +74,7 @@ fi
 rm -rf ${STORAGE_TMP}
 
 echo "Install base requirements from feed..."
-opkg update
+apk update
 
 PYTHON_VERSION=$(get_python_version)
 echo "Detected Python ${PYTHON_VERSION}"
@@ -83,12 +83,12 @@ GTW360_GATEWAY=$(is_gtw360)
 NEED_ZHA="$LUMI_GATEWAY$GTW360_GATEWAY"
 
 # Install them first to check Openlumi feed id added
-opkg install \
+apk add \
   python3-base \
   python3-pynacl \
   python3-ciso8601
 
-opkg install \
+apk add \
   patch \
   unzip \
   libjpeg-turbo \
@@ -129,7 +129,6 @@ opkg install \
   python3-multiprocessing \
   python3-ncurses \
   python3-netdisco \
-  python3-netifaces \
   python3-openssl \
   python3-pillow \
   python3-pip \
@@ -156,14 +155,18 @@ opkg install \
   python3-yarl
 
 # openwrt < 22.03 doesn't have this package
-opkg install python3-pycares 2>/dev/null || true
+apk add python3-pycares 2>/dev/null || true
 if [ $BROKEN_NUMPY ]; then
   # on intel N100 it might use missing CPU instructions. Remove it
-  opkg remove python3-numpy 2>/dev/null || true
+  apk remove python3-numpy 2>/dev/null || true
 else
   # numpy requires hard floating point support and is missing on some MIPS architectures
-  opkg install python3-numpy 2>/dev/null || true
+  apk add python3-numpy 2>/dev/null || true
 fi
+
+apk add gcc
+CFLAGS="-Wno-int-conversion" pip3 install netifaces
+
 
 cd /tmp/
 
